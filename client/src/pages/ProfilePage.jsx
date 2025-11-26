@@ -15,11 +15,9 @@ export default function ProfilePage() {
       <div className="profile-card">
         <h2 className="profile-card__title">Developer</h2>
         <p className="profile-card__meta">
-          Nama: <strong>[Nama Kamu]</strong>
+          Nama: <strong>Tst</strong>
           <br />
-          NIM: <strong>[NIM Kamu]</strong>
-          <br />
-          Kelas: <strong>[Kelas Kamu]</strong>
+          NIM: <strong>2</strong>
         </p>
 
         <div className="profile-card__tag">
