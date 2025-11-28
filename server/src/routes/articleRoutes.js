@@ -25,12 +25,9 @@ router.get("/", async (req, res) => {
       )
       .order("published_at", { ascending: false });
 
-    if (error) {
-      console.error("❌ Supabase error /articles:", error);
-      throw error;
-    }
+    if (error) throw error;
 
-    const mapped = data.map((row) => ({
+    const mapped = (data || []).map((row) => ({
       id: row.id,
       title: row.title,
       slug: row.slug,
@@ -45,7 +42,7 @@ router.get("/", async (req, res) => {
 
     res.json({ success: true, data: mapped });
   } catch (err) {
-    console.error("❌ Error get /api/articles:", err);
+    console.error("Error GET /api/articles:", err.message || err);
     res.status(500).json({
       success: false,
       message: "Gagal mengambil data artikel",
@@ -55,7 +52,7 @@ router.get("/", async (req, res) => {
 
 // GET /api/articles/:id
 router.get("/:id", async (req, res) => {
-  const id = parseInt(req.params.id, 10);
+  const id = Number(req.params.id);
 
   try {
     const { data, error } = await supabase
@@ -80,14 +77,13 @@ router.get("/:id", async (req, res) => {
       .single();
 
     if (error) {
-      // kode not found di Supabase biasanya PGRST116 / exact code nanti terlihat di log
+      // not found
       if (error.code === "PGRST116") {
         return res.status(404).json({
           success: false,
           message: "Artikel tidak ditemukan",
         });
       }
-      console.error("❌ Supabase error /articles/:id:", error);
       throw error;
     }
 
@@ -106,7 +102,7 @@ router.get("/:id", async (req, res) => {
 
     res.json({ success: true, data: mapped });
   } catch (err) {
-    console.error("❌ Error get /api/articles/:id:", err);
+    console.error("Error GET /api/articles/:id:", err.message || err);
     res.status(500).json({
       success: false,
       message: "Gagal mengambil detail artikel",

@@ -10,14 +10,11 @@ router.get("/", async (req, res) => {
       .select("id, name, slug")
       .order("name", { ascending: true });
 
-    if (error) {
-      console.error("❌ Supabase error /categories:", error);
-      throw error;
-    }
+    if (error) throw error;
 
-    res.json({ success: true, data });
+    res.json({ success: true, data: data || [] });
   } catch (err) {
-    console.error("❌ Error get /api/categories:", err);
+    console.error("Error GET /api/categories:", err.message || err);
     res.status(500).json({
       success: false,
       message: "Gagal mengambil data kategori",
@@ -27,9 +24,10 @@ router.get("/", async (req, res) => {
 
 // GET /api/categories/:id/articles
 router.get("/:id/articles", async (req, res) => {
-  const id = parseInt(req.params.id, 10);
+  const id = Number(req.params.id);
 
   try {
+    // cek kategori
     const { data: category, error: catError } = await supabase
       .from("categories")
       .select("id, name, slug")
@@ -43,10 +41,10 @@ router.get("/:id/articles", async (req, res) => {
           message: "Kategori tidak ditemukan",
         });
       }
-      console.error("❌ Supabase error /categories/:id:", catError);
       throw catError;
     }
 
+    // ambil artikel di kategori tsb
     const { data: articles, error: artError } = await supabase
       .from("articles")
       .select(
@@ -63,18 +61,18 @@ router.get("/:id/articles", async (req, res) => {
       .eq("category_id", id)
       .order("published_at", { ascending: false });
 
-    if (artError) {
-      console.error("❌ Supabase error /categories/:id/articles:", artError);
-      throw artError;
-    }
+    if (artError) throw artError;
 
     res.json({
       success: true,
       category,
-      data: articles,
+      data: articles || [],
     });
   } catch (err) {
-    console.error("❌ Error get /api/categories/:id/articles:", err);
+    console.error(
+      "Error GET /api/categories/:id/articles:",
+      err.message || err
+    );
     res.status(500).json({
       success: false,
       message: "Gagal mengambil artikel kategori",

@@ -15,9 +15,11 @@ import AdminArticleFormPage from "../pages/admin/AdminArticleFormPage";
 import AdminCategoriesPage from "../pages/admin/AdminCategoriesPage";
 import AdminCategoryFormPage from "../pages/admin/AdminCategoryFormPage";
 
+import ProtectedRoute from "../components/layout/ProtectedRoute";
+
 function AppRoutes() {
   const routes = useRoutes([
-    // USER ROUTES
+    // user
     { path: "/", element: <HomePage /> },
     { path: "/categories", element: <CategoriesPage /> },
     { path: "/categories/:categoryId", element: <CategoryArticlesPage /> },
@@ -25,27 +27,65 @@ function AppRoutes() {
     { path: "/bookmarks", element: <BookmarksPage /> },
     { path: "/profile", element: <ProfilePage /> },
 
-    // ADMIN ROUTES
+    // login admin (tidak di-protect)
     { path: "/admin/login", element: <AdminLoginPage /> },
-    { path: "/admin/dashboard", element: <AdminDashboardPage /> },
-    { path: "/admin/articles", element: <AdminArticlesPage /> },
+
+    // admin protected
+    {
+      path: "/admin/dashboard",
+      element: (
+        <ProtectedRoute>
+          <AdminDashboardPage />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/admin/articles",
+      element: (
+        <ProtectedRoute>
+          <AdminArticlesPage />
+        </ProtectedRoute>
+      ),
+    },
     {
       path: "/admin/articles/new",
-      element: <AdminArticleFormPage mode="create" />,
+      element: (
+        <ProtectedRoute>
+          <AdminArticleFormPage mode="create" />
+        </ProtectedRoute>
+      ),
     },
     {
       path: "/admin/articles/:articleId/edit",
-      element: <AdminArticleFormPage mode="edit" />,
+      element: (
+        <ProtectedRoute>
+          <AdminArticleFormPage mode="edit" />
+        </ProtectedRoute>
+      ),
     },
-
-    { path: "/admin/categories", element: <AdminCategoriesPage /> },
+    {
+      path: "/admin/categories",
+      element: (
+        <ProtectedRoute>
+          <AdminCategoriesPage />
+        </ProtectedRoute>
+      ),
+    },
     {
       path: "/admin/categories/new",
-      element: <AdminCategoryFormPage mode="create" />,
+      element: (
+        <ProtectedRoute>
+          <AdminCategoryFormPage mode="create" />
+        </ProtectedRoute>
+      ),
     },
     {
       path: "/admin/categories/:categoryId/edit",
-      element: <AdminCategoryFormPage mode="edit" />,
+      element: (
+        <ProtectedRoute>
+          <AdminCategoryFormPage mode="edit" />
+        </ProtectedRoute>
+      ),
     },
   ]);
 

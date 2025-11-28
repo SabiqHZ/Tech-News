@@ -1,4 +1,3 @@
-// server/src/app.js
 const express = require("express");
 const cors = require("cors");
 
@@ -16,7 +15,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Tech News API running" });
 });
 
-// health supabase (opsional)
+// Health check Supabase (opsional)
 app.get("/api/health", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -24,17 +23,14 @@ app.get("/api/health", async (req, res) => {
       .select("id")
       .limit(1);
 
-    if (error) {
-      console.error("Supabase error /api/health:", error);
-      throw error;
-    }
+    if (error) throw error;
 
     res.json({
       ok: true,
       sampleCategoryId: data?.[0]?.id ?? null,
     });
   } catch (err) {
-    console.error("Error /api/health", err);
+    console.error("Error /api/health:", err.message || err);
     res.status(500).json({
       ok: false,
       error: err.message,
