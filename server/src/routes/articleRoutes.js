@@ -1,112 +1,201 @@
 const express = require("express");
 const router = express.Router();
 const supabase = require("../config/db");
+const { requireAuth, requireAdmin } = require("../middleware/authMiddleware");
 
-// GET /api/articles
+// helper buat slug sederhana
+function makeSlug(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
+
+// GET /api/articles → list semua artikel + category_name
 router.get("/", async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data: articles, error: artErr } = await supabase
       .from("articles")
       .select(
-        `
-        id,
-        title,
-        slug,
-        thumbnail_url,
-        content,
-        author,
-        published_at,
-        category_id,
-        categories (
-          name,
-          slug
-        )
-      `
+        "id, title, slug, thumbnail_url, content, author, published_at, category_id"
       )
       .order("published_at", { ascending: false });
 
-    if (error) throw error;
+    if (artErr) throw artErr;
 
-    const mapped = (data || []).map((row) => ({
-      id: row.id,
-      title: row.title,
-      slug: row.slug,
-      thumbnail_url: row.thumbnail_url,
-      content: row.content,
-      author: row.author,
-      published_at: row.published_at,
-      category_id: row.category_id,
-      category_name: row.categories?.name || null,
-      category_slug: row.categories?.slug || null,
+    if (!articles || articles.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const categoryIds = [
+      ...new Set(articles.map((a) => a.category_id).filter(Boolean)),
+    ];
+
+    let categoriesMap = {};
+    if (categoryIds.length > 0) {
+      const { data: categories, error: catErr } = await supabase
+        .from("categories")
+        .select("id, name, slug")
+        .in("id", categoryIds);
+
+      if (catErr) throw catErr;
+
+      categoriesMap = Object.fromEntries(
+        (categories || []).map((c) => [c.id, c])
+      );
+    }
+
+    const result = articles.map((a) => ({
+      ...a,
+      category_name: categoriesMap[a.category_id]?.name || null,
+      category_slug: categoriesMap[a.category_id]?.slug || null,
     }));
 
-    res.json({ success: true, data: mapped });
+    res.json({ success: true, data: result });
   } catch (err) {
-    console.error("Error GET /api/articles:", err.message || err);
-    res.status(500).json({
-      success: false,
-      message: "Gagal mengambil data artikel",
-    });
+    console.error("GET /api/articles error", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Gagal mengambil data artikel" });
   }
 });
 
-// GET /api/articles/:id
+// GET /api/articles/:id → detail artikel
 router.get("/:id", async (req, res) => {
   const id = Number(req.params.id);
 
   try {
-    const { data, error } = await supabase
+    const { data: article, error: artErr } = await supabase
       .from("articles")
       .select(
-        `
-        id,
+        "id, title, slug, thumbnail_url, content, author, published_at, category_id"
+      )
+      .eq("id", id)
+      .maybeSingle();
+
+    if (artErr) throw artErr;
+
+    if (!article) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Artikel tidak ditemukan" });
+    }
+
+    let category = null;
+    if (article.category_id) {
+      const { data: cat, error: catErr } = await supabase
+        .from("categories")
+        .select("id, name, slug")
+        .eq("id", article.category_id)
+        .maybeSingle();
+
+      if (catErr) throw catErr;
+      category = cat;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...article,
+        category_name: category?.name || null,
+        category_slug: category?.slug || null,
+      },
+    });
+  } catch (err) {
+    console.error("GET /api/articles/:id error", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Gagal mengambil detail artikel" });
+  }
+});
+
+// POST /api/articles (admin)
+router.post("/", requireAuth, requireAdmin, async (req, res) => {
+  const { title, category_id, thumbnail_url, content, author, status } =
+    req.body;
+
+  try {
+    const slug = makeSlug(title);
+    const published_at =
+      status === "published" ? new Date().toISOString() : null;
+
+    const { data, error } = await supabase
+      .from("articles")
+      .insert([
+        {
+          title,
+          slug,
+          category_id,
+          thumbnail_url,
+          content,
+          author,
+          published_at,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error("POST /api/articles error", err);
+    res.status(500).json({ success: false, message: "Gagal membuat artikel" });
+  }
+});
+
+// PUT /api/articles/:id (admin)
+router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const { title, category_id, thumbnail_url, content, author, status } =
+    req.body;
+
+  try {
+    const slug = makeSlug(title);
+    const published_at =
+      status === "published" ? new Date().toISOString() : null;
+
+    const { data, error } = await supabase
+      .from("articles")
+      .update({
         title,
         slug,
+        category_id,
         thumbnail_url,
         content,
         author,
         published_at,
-        category_id,
-        categories (
-          name,
-          slug
-        )
-      `
-      )
+      })
       .eq("id", id)
-      .single();
+      .select()
+      .maybeSingle();
 
-    if (error) {
-      // not found
-      if (error.code === "PGRST116") {
-        return res.status(404).json({
-          success: false,
-          message: "Artikel tidak ditemukan",
-        });
-      }
-      throw error;
+    if (error) throw error;
+    if (!data) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Artikel tidak ditemukan" });
     }
 
-    const mapped = {
-      id: data.id,
-      title: data.title,
-      slug: data.slug,
-      thumbnail_url: data.thumbnail_url,
-      content: data.content,
-      author: data.author,
-      published_at: data.published_at,
-      category_id: data.category_id,
-      category_name: data.categories?.name || null,
-      category_slug: data.categories?.slug || null,
-    };
-
-    res.json({ success: true, data: mapped });
+    res.json({ success: true, data });
   } catch (err) {
-    console.error("Error GET /api/articles/:id:", err.message || err);
-    res.status(500).json({
-      success: false,
-      message: "Gagal mengambil detail artikel",
-    });
+    console.error("PUT /api/articles/:id error", err);
+    res.status(500).json({ success: false, message: "Gagal update artikel" });
+  }
+});
+
+// DELETE /api/articles/:id (admin)
+router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+
+  try {
+    const { error } = await supabase.from("articles").delete().eq("id", id);
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("DELETE /api/articles/:id error", err);
+    res.status(500).json({ success: false, message: "Gagal hapus artikel" });
   }
 });
 

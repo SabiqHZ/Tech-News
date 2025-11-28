@@ -4,7 +4,6 @@ const cors = require("cors");
 const articleRoutes = require("./routes/articleRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const authRoutes = require("./routes/authRoutes");
-const supabase = require("./config/db");
 
 const app = express();
 
@@ -13,29 +12,6 @@ app.use(express.json());
 
 app.get("/", (req, res) => {
   res.json({ message: "Tech News API running" });
-});
-
-// Health check Supabase (opsional)
-app.get("/api/health", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("id")
-      .limit(1);
-
-    if (error) throw error;
-
-    res.json({
-      ok: true,
-      sampleCategoryId: data?.[0]?.id ?? null,
-    });
-  } catch (err) {
-    console.error("Error /api/health:", err.message || err);
-    res.status(500).json({
-      ok: false,
-      error: err.message,
-    });
-  }
 });
 
 app.use("/api/auth", authRoutes);

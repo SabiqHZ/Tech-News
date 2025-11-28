@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
+
   if (!email || !password) {
     return res
       .status(400)
@@ -18,9 +19,11 @@ router.post("/login", async (req, res) => {
       .from("users")
       .select("id, name, email, password_hash, role")
       .eq("email", email)
-      .single();
+      .maybeSingle();
 
-    if (error || !user) {
+    if (error) throw error;
+
+    if (!user) {
       return res
         .status(401)
         .json({ success: false, message: "Email atau password salah" });
@@ -50,8 +53,10 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("LOGIN ERROR", err);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("POST /api/auth/login error", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Internal server error (login)" });
   }
 });
 

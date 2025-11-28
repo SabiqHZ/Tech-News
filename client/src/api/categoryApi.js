@@ -1,33 +1,30 @@
 import apiClient from "./client";
 
-// GET /api/categories
+// GET semua kategori
 export const fetchCategories = async () => {
   const res = await apiClient.get("/categories");
   return res.data.data;
 };
 
-// GET /api/categories/:id/articles
-// dipakai di CategoryArticlesPage (user side)
+// GET artikel per kategori (user side)
 export const fetchArticlesByCategory = async (categoryId) => {
   const res = await apiClient.get(`/categories/${categoryId}/articles`);
-  // backend kirim: { success, category, data: [ ...artikel ] }
-  // di sini kita kembalikan hanya array artikelnya:
   return res.data.data;
 };
 
-// POST /api/categories (admin)
+// CREATE
 export const createCategory = async (payload) => {
   const res = await apiClient.post("/categories", payload);
   return res.data.data;
 };
 
-// PUT /api/categories/:id (admin)
+// UPDATE
 export const updateCategory = async (id, payload) => {
   const res = await apiClient.put(`/categories/${id}`, payload);
   return res.data.data;
 };
 
-// DELETE /api/categories/:id (admin)
+// DELETE
 export const deleteCategory = async (id) => {
   const res = await apiClient.delete(`/categories/${id}`);
   return res.data;
