@@ -15,7 +15,8 @@ export default function AdminLoginPage() {
       const res = await apiClient.post("/auth/login", { email, password });
       if (res.data?.token) {
         localStorage.setItem("token", res.data.token);
-        navigate("/admin/dashboard");
+        localStorage.setItem("role", res.data.user.role); // ⬅ simpan role
+        navigate("/profile");
       }
     } catch (err) {
       console.error(err);
