@@ -8,30 +8,72 @@ import {
 } from "../api/articleApi";
 import { fetchCategories } from "../api/categoryApi";
 
+const BOOKMARK_KEY = "technews_bookmarks";
+
 export default function HomePage() {
   const [articles, setArticles] = useState([]);
+  const [categories, setCategories] = useState([]);
+
   const [loading, setLoading] = useState(true);
 
-  // cek admin dari localStorage
+  // cek admin
   const isAdmin =
     !!localStorage.getItem("token") && localStorage.getItem("role") === "admin";
 
-  // state form admin
-  const [categories, setCategories] = useState([]);
-  const [editingId, setEditingId] = useState(null); // null = mode tambah
+  // state admin form
+  const [editingId, setEditingId] = useState(null);
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [content, setContent] = useState("");
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
 
-  // state bookmark user
-  const [bookmarks, setBookmarks] = useState([]);
+  // state bookmark (localStorage)
+  const [bookmarks, setBookmarks] = useState(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(BOOKMARK_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // state search & filter
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategoryId, setFilterCategoryId] = useState(""); // '' = semua
+
+  const isBookmarked = (id) => bookmarks.some((b) => b.id === id);
+
+  const toggleBookmark = (article) => {
+    setBookmarks((prev) => {
+      const exists = prev.some((b) => b.id === article.id);
+      let next;
+      if (exists) {
+        next = prev.filter((b) => b.id !== article.id);
+      } else {
+        const minimal = {
+          id: article.id,
+          title: article.title,
+          category_name: article.category_name,
+          published_at: article.published_at,
+          author: article.author,
+          content: article.content,
+          thumbnail_url: article.thumbnail_url,
+          image_url: article.image_url,
+        };
+        next = [...prev, minimal];
+      }
+      localStorage.setItem(BOOKMARK_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [articleData, categoryData] = await Promise.all([
         fetchArticles(),
-        isAdmin ? fetchCategories() : Promise.resolve([]),
+        fetchCategories(),
       ]);
       setArticles(articleData);
       setCategories(categoryData);
@@ -40,22 +82,9 @@ export default function HomePage() {
     }
   };
 
-  // load artikel & kategori
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // load bookmark dari localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem("bookmarks");
-    if (stored) {
-      try {
-        setBookmarks(JSON.parse(stored));
-      } catch {
-        setBookmarks([]);
-      }
-    }
   }, []);
 
   const resetForm = () => {
@@ -63,6 +92,7 @@ export default function HomePage() {
     setTitle("");
     setCategoryId("");
     setContent("");
+    setThumbnailUrl("");
   };
 
   const handleSubmit = async (e) => {
@@ -72,7 +102,7 @@ export default function HomePage() {
     const payload = {
       title,
       category_id: Number(categoryId),
-      thumbnail_url: null,
+      thumbnail_url: thumbnailUrl || null,
       content,
       author: "Admin",
       status: "published",
@@ -97,6 +127,7 @@ export default function HomePage() {
     setTitle(article.title || "");
     setCategoryId(article.category_id ? String(article.category_id) : "");
     setContent(article.content || "");
+    setThumbnailUrl(article.thumbnail_url || "");
   };
 
   const handleDeleteClick = async (id) => {
@@ -111,137 +142,187 @@ export default function HomePage() {
     }
   };
 
-  // toggle bookmark user
-  const handleToggleBookmark = (article) => {
-    setBookmarks((prev) => {
-      const exists = prev.find((b) => b.id === article.id);
-      let updated;
+  // ====== FILTERING DI SINI ======
+  const filteredArticles = articles.filter((article) => {
+    const q = searchTerm.toLowerCase();
 
-      if (exists) {
-        // hapus bookmark
-        updated = prev.filter((b) => b.id !== article.id);
-      } else {
-        // simpan snapshot artikel ke bookmark
-        const bookmarkData = {
-          id: article.id,
-          title: article.title,
-          category_id: article.category_id,
-          category_name: article.category_name,
-          published_at: article.published_at,
-          author: article.author,
-          thumbnail_url: article.thumbnail_url,
-          content: article.content,
-        };
-        updated = [...prev, bookmarkData];
-      }
+    const matchesSearch =
+      !q ||
+      article.title.toLowerCase().includes(q) ||
+      (article.content || "").toLowerCase().includes(q);
 
-      localStorage.setItem("bookmarks", JSON.stringify(updated));
-      return updated;
-    });
-  };
+    const matchesCategory =
+      !filterCategoryId ||
+      Number(filterCategoryId) === Number(article.category_id);
+
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="page">
+      {/* Header dengan Logo */}
       <div className="page-header">
-        <div className="page-header__accent" />
-        <div>
-          <h1 className="page-title">Tech News</h1>
-          <p className="page-subtitle">
-            Berita teknologi terbaru dalam satu genggaman.
-          </p>
+        <h1 className="page-header__logo">Tech News</h1>
+      </div>
+
+      {/* Search Bar + Filter */}
+      <div className="home-toolbar">
+        <input
+          className="search-input"
+          type="search"
+          placeholder="Cari berita teknologi (judul / isi)..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+
+        <div className="home-filter-row">
+          <button
+            type="button"
+            className={
+              "chip" + (filterCategoryId === "" ? " admin-button--ghost" : "")
+            }
+            onClick={() => setFilterCategoryId("")}
+          >
+            Semua
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              className={
+                "chip" +
+                (String(filterCategoryId) === String(cat.id)
+                  ? " admin-button--ghost"
+                  : "")
+              }
+              onClick={() => setFilterCategoryId(String(cat.id))}
+            >
+              {cat.name}
+            </button>
+          ))}
         </div>
       </div>
 
+      {/* Content Area */}
       {loading ? (
-        <p className="page-subtitle">Memuat berita...</p>
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p style={{ color: "#64748b", margin: 0 }}>Memuat berita...</p>
+        </div>
+      ) : filteredArticles.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state__icon">📰</div>
+          <p className="empty-state__text">Tidak ada berita yang cocok</p>
+          <p className="empty-state__subtext">
+            Coba ubah kata kunci atau filter kategori
+          </p>
+        </div>
       ) : (
         <div className="article-list">
-          {articles.map((article) => {
-            const isBookmarked = bookmarks.some((b) => b.id === article.id);
-
-            return (
-              <div key={article.id}>
-                <Link
-                  to={`/article/${article.id}`}
-                  style={{ textDecoration: "none" }}
-                >
-                  <article className="article-card">
-                    <h2 className="article-card__title">{article.title}</h2>
-
-                    <div className="article-card__meta">
-                      {article.category_name && (
-                        <span className="article-card__category">
-                          {article.category_name}
-                        </span>
-                      )}
-                      <span>
-                        {new Date(article.published_at).toLocaleDateString(
-                          "id-ID"
-                        )}
-                      </span>
-                      <span>• {article.author}</span>
-                    </div>
-
-                    <p className="article-card__excerpt">
-                      {article.content?.slice(0, 110) || ""}...
-                    </p>
-                  </article>
-                </Link>
-
-                {/* Baris bawah kartu: bookmark user + tombol admin */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    marginTop: 4,
-                    marginBottom: 8,
-                  }}
-                >
+          {filteredArticles.map((article) => (
+            <div key={article.id}>
+              <article className="article-card">
+                {/* Image dengan Bookmark */}
+                <div className="article-card__image-wrapper">
+                  <img
+                    src={
+                      article.thumbnail_url ||
+                      article.image_url ||
+                      `https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=250&fit=crop&q=80`
+                    }
+                    alt={article.title}
+                    className="article-card__image"
+                  />
                   <button
                     type="button"
-                    className="admin-button admin-button--ghost"
-                    onClick={() => handleToggleBookmark(article)}
+                    className={
+                      "bookmark-btn " +
+                      (isBookmarked(article.id) ? "bookmark-btn--active" : "")
+                    }
+                    onClick={() => toggleBookmark(article)}
+                    aria-label="Bookmark"
                   >
-                    {isBookmarked ? "Hapus Bookmark" : "Bookmark"}
+                    {isBookmarked(article.id) ? "★" : "☆"}
                   </button>
-
-                  {isAdmin && (
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        type="button"
-                        className="admin-button admin-button--ghost"
-                        onClick={() => handleEditClick(article)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-button admin-button--ghost"
-                        onClick={() => handleDeleteClick(article.id)}
-                      >
-                        Hapus
-                      </button>
-                    </div>
-                  )}
                 </div>
-              </div>
-            );
-          })}
+
+                {/* Card Body */}
+                <div className="article-card__body">
+                  <div className="article-card-header">
+                    <h2 className="article-card__title">{article.title}</h2>
+                  </div>
+
+                  <div className="article-card__meta">
+                    {article.category_name && (
+                      <span className="article-card__category">
+                        {article.category_name}
+                      </span>
+                    )}
+                    <span>
+                      {new Date(article.published_at).toLocaleDateString(
+                        "id-ID",
+                        {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        }
+                      )}
+                    </span>
+                  </div>
+
+                  <p className="article-card__excerpt">
+                    {article.content?.slice(0, 120) || ""}...
+                  </p>
+
+                  <div className="article-card__footer">
+                    <span className="article-card__author">
+                      Oleh {article.author}
+                    </span>
+                    <Link
+                      to={`/article/${article.id}`}
+                      className="article-card__read-more"
+                    >
+                      Baca →
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Admin Actions */}
+                {isAdmin && (
+                  <div className="admin-actions">
+                    <button
+                      type="button"
+                      className="admin-button"
+                      onClick={() => handleEditClick(article)}
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-button"
+                      onClick={() => handleDeleteClick(article.id)}
+                    >
+                      🗑️ Hapus
+                    </button>
+                  </div>
+                )}
+              </article>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* PANEL ADMIN: create + edit */}
+      {/* Admin Form */}
       {isAdmin && (
-        <div className="admin-form-card" style={{ marginTop: 18 }}>
+        <div className="admin-form-card">
           <p className="admin-badge">
             Admin · {editingId ? "Edit Artikel" : "Artikel Baru"}
           </p>
-          <h2 className="profile-card__title">
+          <h2 className="profile-card__title" style={{ marginBottom: "16px" }}>
             {editingId ? "Perbarui Artikel" : "Tambah Artikel Cepat"}
           </h2>
 
-          <form className="admin-form admin-form-row" onSubmit={handleSubmit}>
+          <form className="admin-form" onSubmit={handleSubmit}>
             <div className="admin-form-group">
               <label className="admin-label" htmlFor="title">
                 Judul
@@ -286,19 +367,31 @@ export default function HomePage() {
                 placeholder="Tulis isi berita..."
               />
             </div>
+            <div className="admin-form-group">
+              <label className="admin-label" htmlFor="thumbnail">
+                URL Thumbnail (opsional)
+              </label>
+              <input
+                id="thumbnail"
+                className="admin-input"
+                value={thumbnailUrl}
+                onChange={(e) => setThumbnailUrl(e.target.value)}
+                placeholder="https://contoh.com/gambar.jpg"
+              />
+            </div>
 
             <div className="admin-form-actions">
               {editingId && (
                 <button
                   type="button"
-                  className="admin-button admin-button--ghost"
+                  className="admin-button"
                   onClick={resetForm}
                 >
-                  Batal edit
+                  Batal
                 </button>
               )}
               <button type="submit" className="admin-button">
-                {editingId ? "Simpan Perubahan" : "Publish"}
+                {editingId ? "💾 Simpan Perubahan" : "🚀 Publish"}
               </button>
             </div>
           </form>

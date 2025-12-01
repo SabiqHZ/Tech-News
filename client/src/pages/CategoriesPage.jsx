@@ -81,74 +81,99 @@ export default function CategoriesPage() {
 
   return (
     <div className="page">
+      {/* Header Clean */}
       <div className="page-header">
-        <div className="page-header__accent" />
-        <div>
-          <h1 className="page-title">Kategori</h1>
-          <p className="page-subtitle">
-            Jelajahi berita berdasarkan kategori teknologi.
-          </p>
-        </div>
+        <h1 className="page-header__logo">Kategori</h1>
       </div>
 
       {loading ? (
-        <p className="page-subtitle">Memuat kategori...</p>
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p style={{ color: "#64748b", margin: 0 }}>Memuat kategori...</p>
+        </div>
       ) : (
         <>
-          {/* chip untuk user */}
-          <div className="chip-row">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                className="chip"
-                type="button"
-                onClick={() => handleChipClick(cat.id)}
-              >
-                {cat.name}
-              </button>
-            ))}
+          {/* Chip Categories */}
+          <div className="categories-grid">
+            <div className="categories-header">
+              <h2 className="categories-title">Jelajahi Kategori</h2>
+              <p className="categories-subtitle">
+                Pilih kategori untuk melihat berita teknologi terkait
+              </p>
+            </div>
+
+            <div className="categories-list">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  className="category-card"
+                  type="button"
+                  onClick={() => handleChipClick(cat.id)}
+                >
+                  <span className="category-card__icon">📂</span>
+                  <span className="category-card__name">{cat.name}</span>
+                  <span className="category-card__arrow">→</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* tabel + form admin */}
+          {/* Admin Panel */}
           {isAdmin && (
-            <div className="admin-form-card" style={{ marginTop: 18 }}>
+            <div className="admin-form-card">
               <p className="admin-badge">
                 Admin · {editingId ? "Edit Kategori" : "Kategori Baru"}
               </p>
-              <h2 className="profile-card__title">
-                {editingId ? "Perbarui Kategori" : "Tambah Kategori"}
+              <h2
+                className="profile-card__title"
+                style={{ marginBottom: "20px" }}
+              >
+                {editingId ? "Perbarui Kategori" : "Kelola Kategori"}
               </h2>
 
-              {/* daftar kategori dengan tombol edit/hapus */}
-              <div className="admin-table-wrapper" style={{ marginTop: 10 }}>
+              {/* Table */}
+              <div className="admin-table-wrapper">
                 <table className="admin-table">
                   <thead>
                     <tr>
                       <th>Nama</th>
                       <th>Slug</th>
-                      <th style={{ width: "120px" }}>Aksi</th>
+                      <th style={{ width: "140px" }}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {categories.map((cat) => (
                       <tr key={cat.id}>
-                        <td>{cat.name}</td>
-                        <td>{cat.slug}</td>
+                        <td>
+                          <strong>{cat.name}</strong>
+                        </td>
+                        <td>
+                          <code
+                            style={{
+                              background: "#f1f5f9",
+                              padding: "2px 8px",
+                              borderRadius: "4px",
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            {cat.slug}
+                          </code>
+                        </td>
                         <td>
                           <div className="admin-table-actions">
                             <button
                               type="button"
-                              className="admin-button admin-button--ghost"
+                              className="admin-button"
                               onClick={() => handleEditClick(cat)}
                             >
-                              Edit
+                              ✏️ Edit
                             </button>
                             <button
                               type="button"
-                              className="admin-button admin-button--ghost"
+                              className="admin-button"
                               onClick={() => handleDeleteClick(cat.id)}
                             >
-                              Hapus
+                              🗑️
                             </button>
                           </div>
                         </td>
@@ -156,42 +181,47 @@ export default function CategoriesPage() {
                     ))}
                     {categories.length === 0 && (
                       <tr>
-                        <td colSpan={3}>Belum ada kategori.</td>
+                        <td
+                          colSpan={3}
+                          style={{ textAlign: "center", color: "#94a3b8" }}
+                        >
+                          Belum ada kategori.
+                        </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
 
-              {/* form create/edit */}
+              {/* Form */}
               <form
-                className="admin-form admin-form-row"
+                className="admin-form"
                 onSubmit={handleSubmit}
-                style={{ marginTop: 10 }}
+                style={{ marginTop: "20px" }}
               >
                 <div className="admin-form-group">
                   <label className="admin-label" htmlFor="catName">
-                    Nama kategori
+                    Nama Kategori
                   </label>
                   <input
                     id="catName"
                     className="admin-input"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Contoh: AI"
+                    placeholder="Contoh: Artificial Intelligence"
                   />
                 </div>
 
                 <div className="admin-form-group">
                   <label className="admin-label" htmlFor="catSlug">
-                    Slug
+                    Slug (URL)
                   </label>
                   <input
                     id="catSlug"
                     className="admin-input"
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
-                    placeholder="Contoh: ai"
+                    placeholder="Contoh: artificial-intelligence"
                   />
                 </div>
 
@@ -199,14 +229,14 @@ export default function CategoriesPage() {
                   {editingId && (
                     <button
                       type="button"
-                      className="admin-button admin-button--ghost"
+                      className="admin-button"
                       onClick={resetForm}
                     >
-                      Batal edit
+                      Batal
                     </button>
                   )}
                   <button type="submit" className="admin-button">
-                    {editingId ? "Simpan Perubahan" : "Simpan"}
+                    {editingId ? "💾 Simpan Perubahan" : "➕ Tambah Kategori"}
                   </button>
                 </div>
               </form>
