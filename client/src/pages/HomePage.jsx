@@ -134,8 +134,17 @@ export default function HomePage() {
     if (!window.confirm("Yakin ingin menghapus artikel ini?")) return;
     try {
       await deleteArticle(id);
+
+      // hapus dari list artikel di Home
       setArticles((prev) => prev.filter((a) => a.id !== id));
       if (editingId === id) resetForm();
+
+      // 🔥 hapus juga dari bookmark (state + localStorage)
+      setBookmarks((prev) => {
+        const next = prev.filter((b) => b.id !== id);
+        localStorage.setItem(BOOKMARK_KEY, JSON.stringify(next));
+        return next;
+      });
     } catch (err) {
       console.error("Gagal hapus artikel", err);
       alert("Gagal menghapus artikel");
