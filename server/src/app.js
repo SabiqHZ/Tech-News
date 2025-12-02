@@ -14,8 +14,8 @@ app.get("/", (req, res) => {
   res.json({ message: "Tech News API running" });
 });
 
-app.use("/api/auth", authRoutes);
-app.use("/api/articles", articleRoutes);
-app.use("/api/categories", categoryRoutes);
+app.use("/auth", authRoutes);
+app.use("/articles", articleRoutes);
+app.use("/categories", categoryRoutes);
 
 module.exports = app;
