@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito:wght@400;500;600&display=swap");
+/* ===== GLOBAL FONT RESET ===== */
 html,
 body {
   margin: 0;
@@ -7,13 +8,156 @@ body {
   background-color: #f8fafc;
   color: #0f172a;
 }
+
+* {
+  font-family: inherit;
+}
+
 button,
 input,
 select,
 textarea {
-  font-family: inherit;
+  font-family: "Nunito", system-ui, sans-serif;
 }
 
+/* Semua heading menggunakan Montserrat */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Montserrat", system-ui, sans-serif;
+}
+
+/* ===== PAGE & LAYOUT ===== */
+.page {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+/* ===== ARTICLE CARD ===== */
+.article-card__title {
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.article-card__meta,
+.article-card__excerpt,
+.article-card__author,
+.article-card__read-more {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+/* ===== CATEGORIES ===== */
+.categories-title {
+  font-family: "Montserrat", system-ui, sans-serif;
+}
+
+.categories-subtitle {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.category-card__name {
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-weight: 600;
+}
+
+/* ===== PROFILE ===== */
+.profile-name,
+.profile-section__title {
+  font-family: "Montserrat", system-ui, sans-serif;
+}
+
+.profile-section__text,
+.profile-badge {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.profile-card__title {
+  font-family: "Montserrat", system-ui, sans-serif;
+}
+
+.profile-card__meta {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+/* ===== ADMIN COMPONENTS ===== */
+.admin-badge {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.admin-label {
+  font-family: "Montserrat", system-ui, sans-serif;
+}
+
+.admin-input,
+.admin-textarea {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.admin-button {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.admin-table {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.admin-table th {
+  font-family: "Montserrat", system-ui, sans-serif;
+}
+
+/* ===== QUICK ACTION CARDS ===== */
+.quick-action-card__title {
+  font-family: "Montserrat", system-ui, sans-serif;
+}
+
+.quick-action-card__desc {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+/* ===== LOADING & EMPTY STATE ===== */
+.empty-state__text {
+  font-family: "Montserrat", system-ui, sans-serif;
+}
+
+.empty-state__subtext {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.loading-state p {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+/* ===== ADMIN LOGIN ===== */
+.admin-login-title {
+  font-family: "Montserrat", system-ui, sans-serif;
+}
+
+.admin-login-subtitle {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.admin-login-footer {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+/* ===== BOTTOM NAVIGATION ===== */
+.bottom-nav__item {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+/* ===== CHIPS & FILTERS ===== */
+.chip {
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.home-filter-row button {
+  font-family: "Nunito", system-ui, sans-serif;
+}
 /* ===== HEADER CLEAN LAYOUT ===== */
 .page-header {
   display: flex;
