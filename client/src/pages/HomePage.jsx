@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   fetchArticles,
   createArticle,
@@ -42,6 +42,15 @@ export default function HomePage() {
       return [];
     }
   });
+  const navigate = useNavigate();
+  const handleReadClick = (e) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      e.preventDefault(); // cegah pindah ke /article/:id
+      alert("Harap login terlebih dahulu untuk membaca detail berita.");
+      navigate("/admin/login");
+    }
+  };
 
   // state search & filter
   const [searchTerm, setSearchTerm] = useState("");
@@ -306,6 +315,7 @@ export default function HomePage() {
                       <Link
                         to={`/article/${article.id}`}
                         className="article-card__read-more"
+                        onClick={handleReadClick}
                       >
                         Baca →
                       </Link>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const BOOKMARK_KEY = "technews_bookmarks"; // PENTING: Harus sama dengan HomePage
 
@@ -16,6 +16,16 @@ export default function BookmarksPage() {
       }
     }
   }, []);
+  const navigate = useNavigate();
+
+  const handleReadClick = (e) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      e.preventDefault();
+      alert("Harap login terlebih dahulu untuk membaca detail berita.");
+      navigate("/admin/login");
+    }
+  };
 
   const handleRemoveBookmark = (id) => {
     const updated = bookmarks.filter((b) => b.id !== id);
@@ -103,6 +113,7 @@ export default function BookmarksPage() {
                     <Link
                       to={`/article/${article.id}`}
                       className="article-card__read-more"
+                      onClick={handleReadClick}
                     >
                       Baca →
                     </Link>
