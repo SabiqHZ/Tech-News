@@ -11,20 +11,42 @@ function makeSlug(title) {
     .replace(/(^-|-$)+/g, "");
 }
 
-// GET /api/articles → list semua artikel + category_name
+// GET /api/articles → list artikel + category_name (dengan pagination)
 router.get("/", async (req, res) => {
   try {
-    const { data: articles, error: artErr } = await supabase
+    // pagination: ?page=1&limit=8
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 8;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const {
+      data: articles,
+      error: artErr,
+      count,
+    } = await supabase
       .from("articles")
       .select(
-        "id, title, slug, thumbnail_url, content, author, published_at, category_id"
+        "id, title, slug, thumbnail_url, content, author, published_at, category_id",
+        { count: "exact" }
       )
-      .order("published_at", { ascending: false });
+      .order("published_at", { ascending: false })
+      .range(from, to);
 
     if (artErr) throw artErr;
 
+    const total = count || 0;
+    const totalPages = total > 0 ? Math.ceil(total / limit) : 1;
+
     if (!articles || articles.length === 0) {
-      return res.json({ success: true, data: [] });
+      return res.json({
+        success: true,
+        data: [],
+        page,
+        limit,
+        total,
+        totalPages,
+      });
     }
 
     const categoryIds = [
@@ -51,7 +73,14 @@ router.get("/", async (req, res) => {
       category_slug: categoriesMap[a.category_id]?.slug || null,
     }));
 
-    res.json({ success: true, data: result });
+    res.json({
+      success: true,
+      data: result,
+      page,
+      limit,
+      total,
+      totalPages,
+    });
   } catch (err) {
     console.error("GET /api/articles error", err);
     res
@@ -61,96 +90,51 @@ router.get("/", async (req, res) => {
 });
 
 // GET /api/articles/:id → detail artikel
-router.get("/", async (req, res) => {
-  const page = parseInt(req.query.page, 10) || 1;
-  const limit = parseInt(req.query.limit, 10) || 6;
-  const q = (req.query.q || "").trim();
-  const categoryId = req.query.categoryId ? Number(req.query.categoryId) : null;
-
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
+router.get("/:id", async (req, res) => {
+  const id = Number(req.params.id);
 
   try {
-    let query = supabase.from("articles").select(
-      "id, title, slug, thumbnail_url, content, author, published_at, category_id",
-      { count: "exact" } // supaya dapat total row
-    );
-
-    // search di title & content (case-insensitive)
-    if (q) {
-      query = query.or(`title.ilike.%${q}%,content.ilike.%${q}%`);
-    }
-
-    // filter kategori
-    if (categoryId) {
-      query = query.eq("category_id", categoryId);
-    }
-
-    const {
-      data: articles,
-      error: artErr,
-      count,
-    } = await query.order("published_at", { ascending: false }).range(from, to); // pagination
+    const { data: article, error: artErr } = await supabase
+      .from("articles")
+      .select(
+        "id, title, slug, thumbnail_url, content, author, published_at, category_id"
+      )
+      .eq("id", id)
+      .maybeSingle();
 
     if (artErr) throw artErr;
 
-    const articlesArr = articles || [];
-    const total = count || 0;
-    const totalPages = Math.ceil(total / limit);
-
-    if (articlesArr.length === 0) {
-      return res.json({
-        success: true,
-        data: [],
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages,
-        },
-      });
+    if (!article) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Artikel tidak ditemukan" });
     }
 
-    // ambil nama kategori untuk setiap artikel
-    const categoryIds = [
-      ...new Set(articlesArr.map((a) => a.category_id).filter(Boolean)),
-    ];
-
-    let categoriesMap = {};
-    if (categoryIds.length > 0) {
-      const { data: categories, error: catErr } = await supabase
+    let category = null;
+    if (article.category_id) {
+      const { data: cat, error: catErr } = await supabase
         .from("categories")
         .select("id, name, slug")
-        .in("id", categoryIds);
+        .eq("id", article.category_id)
+        .maybeSingle();
 
       if (catErr) throw catErr;
-
-      categoriesMap = Object.fromEntries(
-        (categories || []).map((c) => [c.id, c])
-      );
+      category = cat;
     }
-
-    const result = articlesArr.map((a) => ({
-      ...a,
-      category_name: categoriesMap[a.category_id]?.name || null,
-      category_slug: categoriesMap[a.category_id]?.slug || null,
-    }));
 
     res.json({
       success: true,
-      data: result,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
+      data: {
+        ...article,
+        category_name: category?.name || null,
+        category_slug: category?.slug || null,
       },
     });
   } catch (err) {
-    console.error("GET /articles error", err);
+    console.error("GET /api/articles/:id error", err);
     res
       .status(500)
-      .json({ success: false, message: "Gagal mengambil data artikel" });
+      .json({ success: false, message: "Gagal mengambil detail artikel" });
   }
 });
 

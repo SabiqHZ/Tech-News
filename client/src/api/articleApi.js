@@ -1,43 +1,34 @@
 import apiClient from "./client";
 
-// GET /api/articles
-export const fetchArticles = async ({
-  page = 1,
-  limit = 8,
-  q = "",
-  categoryId = "",
-} = {}) => {
+// GET /articles dengan pagination
+export const fetchArticles = async (page = 1, limit = 8) => {
   const res = await apiClient.get("/articles", {
-    params: {
-      page,
-      limit,
-      q: q || undefined,
-      categoryId: categoryId || undefined,
-    },
+    params: { page, limit },
   });
 
+  // backend balikin { success, data, page, limit, total, totalPages }
   return res.data;
 };
 
-// GET /api/articles/:id
+// GET /articles/:id
 export const fetchArticleById = async (id) => {
   const res = await apiClient.get(`/articles/${id}`);
   return res.data.data;
 };
 
-// POST /api/articles
+// POST /articles
 export const createArticle = async (payload) => {
   const res = await apiClient.post("/articles", payload);
   return res.data.data;
 };
 
-// PUT /api/articles/:id
+// PUT /articles/:id
 export const updateArticle = async (id, payload) => {
   const res = await apiClient.put(`/articles/${id}`, payload);
   return res.data.data;
 };
 
-// DELETE /api/articles/:id
+// DELETE /articles/:id
 export const deleteArticle = async (id) => {
   const res = await apiClient.delete(`/articles/${id}`);
   return res.data;

@@ -9,6 +9,7 @@ import {
 import { fetchCategories } from "../api/categoryApi";
 
 const BOOKMARK_KEY = "technews_bookmarks";
+const PAGE_SIZE = 8;
 
 export default function HomePage() {
   const [articles, setArticles] = useState([]);
@@ -16,9 +17,9 @@ export default function HomePage() {
 
   const [loading, setLoading] = useState(true);
 
-  // pagination
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState(null);
+  // pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // cek admin
   const isAdmin =
@@ -72,46 +73,28 @@ export default function HomePage() {
     });
   };
 
-  // ==== FETCH ARTICLES (dengan pagination, search, filter kategori) ====
-  const loadArticles = async () => {
+  const loadData = async (page = 1) => {
     try {
       setLoading(true);
-      const res = await fetchArticles({
-        page,
-        limit: 6,
-        q: searchTerm,
-        categoryId: filterCategoryId,
-      });
-      setArticles(res.data || []);
-      setPagination(res.pagination || null);
-    } catch (err) {
-      console.error("Gagal load artikel", err);
-      setArticles([]);
-      setPagination(null);
+
+      const [articleRes, categoryData] = await Promise.all([
+        fetchArticles(page, PAGE_SIZE),
+        fetchCategories(),
+      ]);
+
+      // articleRes: { success, data, page, limit, total, totalPages }
+      setArticles(articleRes.data || []);
+      setCategories(categoryData || []);
+      setCurrentPage(articleRes.page || page);
+      setTotalPages(articleRes.totalPages || 1);
     } finally {
       setLoading(false);
     }
   };
 
-  // ==== FETCH CATEGORIES sekali saja ====
-  const loadCategories = async () => {
-    try {
-      const categoryData = await fetchCategories();
-      setCategories(categoryData);
-    } catch (err) {
-      console.error("Gagal load kategori", err);
-    }
-  };
-
-  // efek: load artikel setiap page / search / filter berubah
   useEffect(() => {
-    loadArticles();
+    loadData(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, searchTerm, filterCategoryId]);
-
-  // efek: load kategori hanya sekali
-  useEffect(() => {
-    loadCategories();
   }, []);
 
   const resetForm = () => {
@@ -138,15 +121,12 @@ export default function HomePage() {
     try {
       if (editingId) {
         await updateArticle(editingId, payload);
-        resetForm();
-        // refresh halaman sekarang
-        loadArticles();
       } else {
         await createArticle(payload);
-        resetForm();
-        // kalau artikel baru, pindah ke page 1 supaya kelihatan
-        setPage(1);
       }
+      resetForm();
+      // reload halaman sekarang dari backend
+      loadData(currentPage);
     } catch (err) {
       console.error("Gagal simpan artikel", err);
       alert("Gagal menyimpan artikel");
@@ -166,30 +146,41 @@ export default function HomePage() {
     try {
       await deleteArticle(id);
 
-      // hapus dari bookmark juga
+      // hapus juga dari bookmark (state + localStorage)
       setBookmarks((prev) => {
         const next = prev.filter((b) => b.id !== id);
         localStorage.setItem(BOOKMARK_KEY, JSON.stringify(next));
         return next;
       });
 
-      // kalau artikel di halaman ini tinggal 1 dan masih ada halaman sebelumnya, mundur 1 page
-      if (articles.length === 1 && page > 1) {
-        setPage(page - 1);
-      } else {
-        loadArticles();
-      }
-
-      if (editingId === id) resetForm();
+      // reload halaman sekarang setelah delete
+      loadData(currentPage);
     } catch (err) {
       console.error("Gagal hapus artikel", err);
       alert("Gagal menghapus artikel");
     }
   };
 
-  // helper pagination UI
-  const canGoPrev = pagination && page > 1;
-  const canGoNext = pagination && page < pagination.totalPages;
+  // ====== FILTERING DI SINI (masih client-side, per halaman yang sedang ditampilkan) ======
+  const filteredArticles = articles.filter((article) => {
+    const q = searchTerm.toLowerCase();
+
+    const matchesSearch =
+      !q ||
+      article.title.toLowerCase().includes(q) ||
+      (article.content || "").toLowerCase().includes(q);
+
+    const matchesCategory =
+      !filterCategoryId ||
+      Number(filterCategoryId) === Number(article.category_id);
+
+    return matchesSearch && matchesCategory;
+  });
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    loadData(page);
+  };
 
   return (
     <div className="page">
@@ -205,10 +196,7 @@ export default function HomePage() {
           type="search"
           placeholder="Cari berita teknologi (judul / isi)..."
           value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setPage(1); // setiap ganti kata kunci, balik ke page 1
-          }}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
 
         <div className="home-filter-row">
@@ -217,10 +205,7 @@ export default function HomePage() {
             className={
               "chip" + (filterCategoryId === "" ? " admin-button--ghost" : "")
             }
-            onClick={() => {
-              setFilterCategoryId("");
-              setPage(1);
-            }}
+            onClick={() => setFilterCategoryId("")}
           >
             Semua
           </button>
@@ -234,10 +219,7 @@ export default function HomePage() {
                   ? " admin-button--ghost"
                   : "")
               }
-              onClick={() => {
-                setFilterCategoryId(String(cat.id));
-                setPage(1);
-              }}
+              onClick={() => setFilterCategoryId(String(cat.id))}
             >
               {cat.name}
             </button>
@@ -251,7 +233,7 @@ export default function HomePage() {
           <div className="spinner"></div>
           <p style={{ color: "#64748b", margin: 0 }}>Memuat berita...</p>
         </div>
-      ) : articles.length === 0 ? (
+      ) : filteredArticles.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state__icon">📰</div>
           <p className="empty-state__text">Tidak ada berita yang cocok</p>
@@ -262,7 +244,7 @@ export default function HomePage() {
       ) : (
         <>
           <div className="article-list">
-            {articles.map((article) => (
+            {filteredArticles.map((article) => (
               <div key={article.id}>
                 <article className="article-card">
                   {/* Image dengan Bookmark */}
@@ -354,30 +336,36 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Pagination */}
-          {pagination && pagination.totalPages > 1 && (
-            <div className="pagination">
-              <button
-                className="pagination-button"
-                type="button"
-                disabled={!canGoPrev}
-                onClick={() => canGoPrev && setPage(page - 1)}
-              >
-                ← Sebelumnya
-              </button>
-              <span className="pagination-info">
-                Halaman {page} dari {pagination.totalPages}
-              </span>
-              <button
-                className="pagination-button"
-                type="button"
-                disabled={!canGoNext}
-                onClick={() => canGoNext && setPage(page + 1)}
-              >
-                Berikutnya →
-              </button>
-            </div>
-          )}
+          {/* Pagination Controls */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "8px",
+              margin: "16px 24px",
+            }}
+          >
+            <button
+              type="button"
+              className="admin-button"
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              ← Sebelumnya
+            </button>
+            <span style={{ fontSize: "0.85rem", color: "#64748b" }}>
+              Halaman {currentPage} dari {totalPages}
+            </span>
+            <button
+              type="button"
+              className="admin-button"
+              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              Berikutnya →
+            </button>
+          </div>
         </>
       )}
 
