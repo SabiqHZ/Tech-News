@@ -1016,3 +1016,228 @@ h6 {
   width: 100%;
   justify-content: center;
 }
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+
+.pagination-button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748b;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pagination-button:not(:disabled):hover {
+  background: #e0f2fe;
+  border-color: #0ea5e9;
+  color: #0284c7;
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+/* ===== ARTICLE DETAIL PAGE ===== */
+.article-detail-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.article-detail-header {
+  margin-bottom: 32px;
+}
+
+.article-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-bottom: 24px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.article-detail-back:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0ea5e9;
+}
+
+.article-detail-image {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+}
+
+.article-detail-category {
+  display: inline-block;
+  padding: 6px 14px;
+  background: #e0f2fe;
+  color: #0284c7;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.article-detail-title {
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  margin: 0 0 20px 0;
+}
+
+.article-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 32px;
+  font-family: "Nunito", system-ui, sans-serif;
+}
+
+.article-detail-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.article-detail-meta-icon {
+  font-size: 1rem;
+  color: #94a3b8;
+}
+
+.article-detail-meta-label {
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.article-detail-content {
+  font-family: "Nunito", system-ui, sans-serif;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #334155;
+}
+
+.article-detail-content p {
+  margin: 0 0 24px 0;
+}
+
+.article-detail-content p:last-child {
+  margin-bottom: 0;
+}
+
+.article-detail-divider {
+  border: none;
+  border-top: 2px solid #e2e8f0;
+  margin: 32px 0;
+}
+
+/* Loading & Error States */
+.article-detail-loading,
+.article-detail-error,
+.article-detail-notfound {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.article-detail-loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e0f2fe;
+  border-top: 4px solid #0ea5e9;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.article-detail-loading-text,
+.article-detail-error-text,
+.article-detail-notfound-text {
+  font-family: "Nunito", system-ui, sans-serif;
+  font-size: 1.1rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.article-detail-error-icon,
+.article-detail-notfound-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .article-detail-container {
+    padding: 16px;
+  }
+
+  .article-detail-title {
+    font-size: 1.75rem;
+  }
+
+  .article-detail-image {
+    height: 250px;
+    border-radius: 12px;
+  }
+
+  .article-detail-content {
+    font-size: 1rem;
+  }
+
+  .article-detail-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .article-detail-title {
+    font-size: 2rem;
+  }
+
+  .article-detail-image {
+    height: 320px;
+  }
+}

@@ -1,9 +1,22 @@
 import apiClient from "./client";
 
 // GET /api/articles
-export const fetchArticles = async () => {
-  const res = await apiClient.get("/articles");
-  return res.data.data;
+export const fetchArticles = async ({
+  page = 1,
+  limit = 8,
+  q = "",
+  categoryId = "",
+} = {}) => {
+  const res = await apiClient.get("/articles", {
+    params: {
+      page,
+      limit,
+      q: q || undefined,
+      categoryId: categoryId || undefined,
+    },
+  });
+
+  return res.data;
 };
 
 // GET /api/articles/:id
