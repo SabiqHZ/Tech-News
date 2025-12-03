@@ -16,7 +16,7 @@ router.get("/", async (req, res) => {
   try {
     // pagination: ?page=1&limit=8
     const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 8;
+    const limit = parseInt(req.query.limit, 10) || 6;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 

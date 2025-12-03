@@ -1,7 +1,7 @@
 import apiClient from "./client";
 
 // GET /articles dengan pagination
-export const fetchArticles = async (page = 1, limit = 8) => {
+export const fetchArticles = async (page = 1, limit = 6) => {
   const res = await apiClient.get("/articles", {
     params: { page, limit },
   });

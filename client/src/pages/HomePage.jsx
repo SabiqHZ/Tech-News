@@ -9,7 +9,7 @@ import {
 import { fetchCategories } from "../api/categoryApi";
 
 const BOOKMARK_KEY = "technews_bookmarks";
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 6;
 
 export default function HomePage() {
   const [articles, setArticles] = useState([]);
